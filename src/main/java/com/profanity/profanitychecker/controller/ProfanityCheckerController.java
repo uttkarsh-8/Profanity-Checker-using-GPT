@@ -26,6 +26,7 @@ public class ProfanityCheckerController {
         this.urlContentFetcherService = urlContentFetcherService;
     }
 
+    // this method is for pdf and word files
     @PostMapping("/check-file")
     public ResponseEntity<String> checkFileForProfanity(@RequestParam("file") MultipartFile file) {
         try {
@@ -40,9 +41,30 @@ public class ProfanityCheckerController {
     }
 
     @PostMapping("/check-url")
-    public ResponseEntity<AnalysisResult> checkUrlForProfanity(@RequestParam("url") String url) {
-        String text = urlContentFetcherService.fetchContentFromUrl(url);
-        AnalysisResult analysisResult = profanityAnalysisService.analyzeText(text);
-        return ResponseEntity.ok(analysisResult);
+    public ResponseEntity<String> checkUrlForProfanity(@RequestParam("url") String url) {
+        try {
+            String text = urlContentFetcherService.fetchContentFromUrl(url);
+            AnalysisResult analysisResult = profanityAnalysisService.analyzeText(text);
+            String summary = profanityAnalysisService.generateSummaryFromModerationResult(analysisResult);
+            System.out.println("HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            return ResponseEntity.ok(summary);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing the URI: " + e.getMessage());
+        }
+
+    }
+
+    @PostMapping("/check-audio")
+    public ResponseEntity<String> checkAudioForProfanity(@RequestParam("audioFile")MultipartFile audioFile){
+        try {
+            AnalysisResult analysisResult = profanityAnalysisService.analyzeAudioFile(audioFile);
+            String summary = profanityAnalysisService.generateSummaryFromModerationResult(analysisResult);
+            System.out.println("IN AUDIO METHOD!!!!");
+            return ResponseEntity.ok(summary);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error processing the audio file: " + e.getMessage());
+        }
     }
 }
